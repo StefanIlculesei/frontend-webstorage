@@ -1,12 +1,15 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiError, RefreshTokenResponse } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5226/api';
 const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
 
-// Create axios instance
+// Create axios instance - use relative path /api for browser requests (Next.js rewrites to backend)
+// For server-side, use absolute URL
+const baseURL = typeof window !== 'undefined' ? '/api' : API_BASE_URL;
+
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -83,6 +86,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
     }
 
     // Create a new axios instance to avoid interceptor recursion
+    // Use absolute URL for refresh since it's a special case
     const response = await axios.post<RefreshTokenResponse>(
       `${API_BASE_URL}/auth/refresh`,
       { refreshToken },
