@@ -40,7 +40,7 @@ export async function downloadFile(id: number): Promise<Blob> {
 }
 
 /**
- * Upload a file with chunked upload support
+ * Upload a file
  */
 export async function uploadFile(
   file: File,
@@ -48,18 +48,67 @@ export async function uploadFile(
   folderId?: number | null,
   visibility: 'private' | 'shared' | 'public' = 'private',
   onProgress?: (progress: { loadedBytes: number; totalBytes: number }) => void
-): Promise<{ success: boolean; fileName: string; size: number }> {
-  const response = await uploadFileInChunks(
-    '/files/upload',
-    file,
-    {
-      fileName,
-      folderId: folderId ?? undefined,
-      visibility,
-    },
-    onProgress
-  );
-  return response;
+): Promise<FileDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('fileName', fileName);
+  if (folderId !== null && folderId !== undefined) {
+    formData.append('folderId', folderId.toString());
+  }
+  formData.append('visibility', visibility);
+
+  // Use XMLHttpRequest for progress tracking
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (e: ProgressEvent) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress({
+          loadedBytes: e.loaded,
+          totalBytes: e.total,
+        });
+      }
+    });
+
+    // Handle completion
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 201 || xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch {
+          resolve({ fileName, fileSize: file.size } as FileDto);
+        }
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText);
+          reject(new Error(error.message || `Upload failed with status ${xhr.status}`));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    });
+
+    // Handle errors
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload cancelled'));
+    });
+
+    // Setup request
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    xhr.open('POST', '/api/files/upload');
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    // Send request
+    xhr.send(formData);
+  });
 }
 
 /**

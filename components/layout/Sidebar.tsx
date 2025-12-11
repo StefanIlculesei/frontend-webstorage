@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/files', label: 'Files', icon: Folder },
+  { href: '/dashboard/folders', label: 'Folders', icon: Folder },
   { href: '/dashboard/upload', label: 'Upload', icon: UploadCloud },
 ];
 

@@ -34,11 +34,13 @@ export function FileUploadModal({ folderId = null }: FileUploadModalProps): Reac
           setProgress(pct);
         }
       );
-      toast.success('File uploaded');
+      toast.success(`${file.name} uploaded successfully`);
       setOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed');
+      setProgress(0);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      console.error('Upload error:', err);
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
