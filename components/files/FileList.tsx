@@ -25,6 +25,7 @@ export function FileList({ folderId = null, searchQuery }: FileListProps): React
   const { data, isLoading } = useQuery({
     queryKey: ['files', { folderId, searchQuery }],
     queryFn: fetchFiles,
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   if (isLoading) {

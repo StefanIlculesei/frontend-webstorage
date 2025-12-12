@@ -10,8 +10,16 @@ import { FileUploadModal } from '@/components/files/FileUploadModal';
 import { FolderTree } from '@/components/folders/FolderTree';
 
 export default function DashboardPage(): ReactElement {
-  const { data: stats } = useQuery({ queryKey: ['dashboard-stats'], queryFn: getDashboardStats });
-  const { data: recent } = useQuery({ queryKey: ['files', 'recent'], queryFn: () => getRecentFiles(6) });
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: getDashboardStats,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  const { data: recent } = useQuery({
+    queryKey: ['files', 'recent'],
+    queryFn: () => getRecentFiles(6),
+    refetchInterval: 30000,
+  });
 
   return (
     <div className="space-y-6">

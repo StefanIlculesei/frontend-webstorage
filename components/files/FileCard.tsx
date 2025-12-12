@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { File as FileIcon, Download, Trash, FolderOpen } from 'lucide-react';
 import type { File as FileDto } from '@/types';
 import { downloadFile, deleteFile, moveFile } from '@/lib/api/files';
-import { getRootFolders } from '@/lib/api/folders';
+import { getAllFolders } from '@/lib/api/folders';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { formatBytes } from '@/lib/utils/format';
@@ -24,15 +24,19 @@ export function FileCard({ file }: FileCardProps): ReactElement {
 
   // Get available folders
   const { data: folders = [] } = useQuery({
-    queryKey: ['folders', 'root'],
-    queryFn: getRootFolders,
+    queryKey: ['folders', 'all'],
+    queryFn: getAllFolders,
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteFile(file.id),
     onSuccess: () => {
       toast.success('File deleted');
+      // Invalidate both files and folders to update counts
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      // Explicitly refetch all folder queries so FolderTree updates immediately
+      queryClient.refetchQueries({ queryKey: ['folders'] });
     },
     onError: () => toast.error('Failed to delete file'),
   });
@@ -41,7 +45,11 @@ export function FileCard({ file }: FileCardProps): ReactElement {
     mutationFn: (targetFolderId: number | null) => moveFile(file.id, targetFolderId),
     onSuccess: () => {
       toast.success('File moved');
+      // Invalidate all file and folder queries to refresh counts and contents
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      // Explicitly refetch all folder queries so FolderTree updates immediately
+      queryClient.refetchQueries({ queryKey: ['folders'] });
       setIsMoveDialogOpen(false);
       setSelectedFolderId(null);
     },

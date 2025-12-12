@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRootFolders, createFolder, deleteFolder, updateFolder } from '@/lib/api/folders';
-import { getFilesByFolder, moveFile } from '@/lib/api/files';
+import { getRootFolders, createFolder, deleteFolder, getFolderTree } from '@/lib/api/folders';
+import { getFilesByFolder } from '@/lib/api/files';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,8 +11,11 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Folder as FolderIcon, Plus, Trash2, FolderOpen } from 'lucide-react';
 import type { Folder } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function FoldersPage(): ReactElement {
+  const { user } = useAuth();
+  const rootFolderId = useMemo(() => user?.rootFolderId ?? null, [user]);
   const queryClient = useQueryClient();
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
@@ -21,27 +24,31 @@ export default function FoldersPage(): ReactElement {
     { id: null, name: 'Root' },
   ]);
 
+  const effectiveFolderId = currentFolderId ?? rootFolderId ?? null;
+
   // Get current folder's subfolders
   const { data: folders = [], isLoading: foldersLoading } = useQuery({
-    queryKey: ['folders', currentFolderId],
+    queryKey: ['folders', effectiveFolderId ?? 'root'],
     queryFn: () => {
-      if (currentFolderId === null) {
-        return getRootFolders();
+      // Use tree endpoint when we know a folder id (root or nested)
+      if (effectiveFolderId) {
+        return getFolderTree(effectiveFolderId).then((tree) => tree.subFolders);
       }
-      // Note: This uses files API to get folder contents; ideally use getFolderContents
-      return Promise.resolve([]);
+      return getRootFolders();
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Get files in current folder
   const { data: files = [] } = useQuery({
-    queryKey: ['files', 'folder', currentFolderId],
+    queryKey: ['files', 'folder', effectiveFolderId ?? 'root'],
     queryFn: () => {
-      if (currentFolderId === null || currentFolderId === undefined) {
+      if (effectiveFolderId === null || effectiveFolderId === undefined) {
         return Promise.resolve([]);
       }
-      return getFilesByFolder(currentFolderId);
+      return getFilesByFolder(effectiveFolderId);
     },
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   // Create folder mutation
@@ -49,10 +56,11 @@ export default function FoldersPage(): ReactElement {
     mutationFn: (name: string) =>
       createFolder({
         name,
-        parentFolderId: currentFolderId ?? undefined,
+        parentFolderId: currentFolderId ?? rootFolderId ?? undefined,
       }),
     onSuccess: (newFolder) => {
-      queryClient.invalidateQueries({ queryKey: ['folders', currentFolderId] });
+      // Invalidate all folder queries to update counts
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
       setNewFolderName('');
       setIsCreateDialogOpen(false);
       toast.success(`Folder "${newFolder.name}" created`);
@@ -65,8 +73,9 @@ export default function FoldersPage(): ReactElement {
   // Delete folder mutation
   const deleteFolderMutation = useMutation({
     mutationFn: deleteFolder,
-    onSuccess: (_, folderId) => {
-      queryClient.invalidateQueries({ queryKey: ['folders', currentFolderId] });
+    onSuccess: () => {
+      // Invalidate all folder queries to update counts
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
       toast.success('Folder deleted');
     },
     onError: () => {

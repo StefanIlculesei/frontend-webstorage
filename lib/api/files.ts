@@ -57,7 +57,7 @@ export async function uploadFile(
   }
   formData.append('visibility', visibility);
 
-  // Use XMLHttpRequest for progress tracking
+  // Use XMLHttpRequest for progress tracking and direct upload to backend
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -99,9 +99,15 @@ export async function uploadFile(
       reject(new Error('Upload cancelled'));
     });
 
-    // Setup request
+    // Setup request - use direct backend URL to bypass Next.js size limits
+    const backendUrl = typeof window !== 'undefined' 
+      ? (window.location.origin.includes('localhost:3') || window.location.origin.includes('192.168'))
+        ? 'http://localhost:5226' // Direct to backend for local dev
+        : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5226'
+      : 'http://localhost:5226';
+    
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    xhr.open('POST', '/api/files/upload');
+    xhr.open('POST', `${backendUrl}/api/files/upload`);
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     }

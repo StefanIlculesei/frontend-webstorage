@@ -176,6 +176,7 @@ export interface UserProfile {
   storageUsed: number;
   storageLimit: number;
   createdAt: string;
+  rootFolderId: number;
 }
 
 export interface UserProfileUpdateRequest {

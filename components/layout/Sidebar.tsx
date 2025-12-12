@@ -34,7 +34,9 @@ export function Sidebar(): ReactElement {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname?.startsWith(item.href);
+              const isActive = item.href === '/dashboard'
+                ? pathname === '/dashboard'
+                : pathname?.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
