@@ -1,17 +1,29 @@
-'use client';
+"use client";
 
-import { useState, type ReactElement } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { File as FileIcon, Download, Trash, FolderOpen } from 'lucide-react';
-import type { File as FileDto } from '@/types';
-import { downloadFile, deleteFile, moveFile } from '@/lib/api/files';
-import { getAllFolders } from '@/lib/api/folders';
-import { toast } from 'sonner';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { formatBytes } from '@/lib/utils/format';
-import type { Folder } from '@/types';
+import { useState, type ReactElement } from "react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { File as FileIcon, Download, Trash, FolderOpen } from "lucide-react";
+import type { File as FileDto } from "@/types";
+import { downloadFile, deleteFile, moveFile } from "@/lib/api/files";
+import { getAllFolders } from "@/lib/api/folders";
+import { toast } from "sonner";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { formatBytes } from "@/lib/utils/format";
+import type { Folder } from "@/types";
 
 interface FileCardProps {
   file: FileDto;
@@ -24,50 +36,51 @@ export function FileCard({ file }: FileCardProps): ReactElement {
 
   // Get available folders
   const { data: folders = [] } = useQuery({
-    queryKey: ['folders', 'all'],
+    queryKey: ["folders", "all"],
     queryFn: getAllFolders,
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteFile(file.id),
     onSuccess: () => {
-      toast.success('File deleted');
+      toast.success("File deleted");
       // Invalidate both files and folders to update counts
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
       // Explicitly refetch all folder queries so FolderTree updates immediately
-      queryClient.refetchQueries({ queryKey: ['folders'] });
+      queryClient.refetchQueries({ queryKey: ["folders"] });
     },
-    onError: () => toast.error('Failed to delete file'),
+    onError: () => toast.error("Failed to delete file"),
   });
 
   const moveMutation = useMutation({
-    mutationFn: (targetFolderId: number | null) => moveFile(file.id, targetFolderId),
+    mutationFn: (targetFolderId: number | null) =>
+      moveFile(file.id, targetFolderId),
     onSuccess: () => {
-      toast.success('File moved');
+      toast.success("File moved");
       // Invalidate all file and folder queries to refresh counts and contents
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
       // Explicitly refetch all folder queries so FolderTree updates immediately
-      queryClient.refetchQueries({ queryKey: ['folders'] });
+      queryClient.refetchQueries({ queryKey: ["folders"] });
       setIsMoveDialogOpen(false);
       setSelectedFolderId(null);
     },
-    onError: () => toast.error('Failed to move file'),
+    onError: () => toast.error("Failed to move file"),
   });
 
   const onDownload = async () => {
     try {
       const blob = await downloadFile(file.id);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = file.fileName;
       a.click();
-      toast.success('Download started');
+      toast.success("Download started");
     } catch (err) {
       console.error(err);
-      toast.error('Download failed');
+      toast.error("Download failed");
     }
   };
 
@@ -78,16 +91,26 @@ export function FileCard({ file }: FileCardProps): ReactElement {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="space-y-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <FileIcon className="h-4 w-4" aria-hidden />
-          <span className="truncate" title={file.fileName}>{file.fileName}</span>
+        <CardTitle className="flex items-center gap-2 text-base min-w-0">
+          <FileIcon className="h-4 w-4 flex-shrink-0" aria-hidden />
+          <span className="truncate" title={file.fileName}>
+            {file.fileName}
+          </span>
         </CardTitle>
-        <div className="text-xs text-muted-foreground">{formatBytes(file.fileSize)}</div>
+        <div className="text-xs text-muted-foreground">
+          {formatBytes(file.fileSize)}
+        </div>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground flex-1">
-        <div>Type: {file.mimeType}</div>
-        <div>Visibility: {file.visibility}</div>
-        {file.folderName && <div>Folder: {file.folderName}</div>}
+      <CardContent className="text-sm text-muted-foreground flex-1 min-w-0">
+        <div className="truncate" title={file.mimeType}>
+          Type: {file.mimeType}
+        </div>
+        <div className="truncate">Visibility: {file.visibility}</div>
+        {file.folderName && (
+          <div className="truncate" title={file.folderName}>
+            Folder: {file.folderName}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex gap-2 flex-wrap">
         <Button variant="secondary" size="sm" onClick={onDownload}>
@@ -110,8 +133,8 @@ export function FileCard({ file }: FileCardProps): ReactElement {
                 onClick={() => setSelectedFolderId(null)}
                 className={`w-full text-left p-3 rounded-lg border transition-colors ${
                   selectedFolderId === null
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'hover:bg-muted'
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "hover:bg-muted"
                 }`}
               >
                 Root (No folder)
@@ -122,12 +145,14 @@ export function FileCard({ file }: FileCardProps): ReactElement {
                   onClick={() => setSelectedFolderId(folder.id)}
                   className={`w-full text-left p-3 rounded-lg border transition-colors ${
                     selectedFolderId === folder.id
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'hover:bg-muted'
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "hover:bg-muted"
                   }`}
                 >
                   <div className="font-medium text-sm">{folder.name}</div>
-                  <div className="text-xs opacity-75">{folder.fileCount} files</div>
+                  <div className="text-xs opacity-75">
+                    {folder.fileCount} files
+                  </div>
                 </button>
               ))}
             </div>
@@ -136,7 +161,7 @@ export function FileCard({ file }: FileCardProps): ReactElement {
               disabled={moveMutation.isPending}
               className="w-full"
             >
-              {moveMutation.isPending ? 'Moving...' : 'Move File'}
+              {moveMutation.isPending ? "Moving..." : "Move File"}
             </Button>
           </DialogContent>
         </Dialog>
@@ -147,7 +172,7 @@ export function FileCard({ file }: FileCardProps): ReactElement {
           disabled={deleteMutation.isPending}
         >
           <Trash className="mr-2 h-4 w-4" aria-hidden />
-          {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          {deleteMutation.isPending ? "Deleting..." : "Delete"}
         </Button>
       </CardFooter>
     </Card>
