@@ -52,22 +52,46 @@ export interface FolderContents extends Folder {
 export interface Plan {
   id: number;
   name: string;
-  storageLimit: number;
-  price: number;
-  features: string;
-  currency: string;
+  description: string;
+  maxFileSize: number;
+  limitSize: number;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  maxFileCount: number;
+  isActive: boolean;
 }
 
 export interface Subscription {
   id: number;
   userId: number;
   planId: number;
+  planName: string;
   startDate: string;
   endDate: string;
-  isActive: boolean;
+  status: 'active' | 'canceled' | 'expired' | 'trialing';
   autoRenew: boolean;
   createdAt: string;
+  updatedAt?: string | null;
   plan?: Plan;
+}
+
+export interface StorageQuotaInfo {
+  userId: number;
+  storageUsed: number;
+  storageLimit: number;
+  maxFileSize: number;
+  storagePercentage: number;
+  currentPlan: string;
+  subscriptionStatus: string;
+  subscriptionEndDate: string | null;
+}
+
+export interface ApiErrorResponse {
+  message: string;
+  errorCategory?: string;
+  errorCode?: string;
+  details?: Record<string, unknown>;
+  isActionable?: boolean;
 }
 
 // ============================================================================

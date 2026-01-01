@@ -138,6 +138,31 @@ apiClient.interceptors.response.use(
   async (error: AxiosError): Promise<unknown> => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // Handle 403 errors for subscription-related issues
+    if (error.response?.status === 403) {
+      const errorData = error.response.data as any;
+      
+      // Handle SUBSCRIPTION_EXPIRED - extract subscription from error and return it
+      if (errorData?.errorCode === 'SUBSCRIPTION_EXPIRED' && errorData?.details?.subscription) {
+        // Return the subscription data from the error response
+        // This allows the frontend to display the expired subscription and allow renewal/upgrade
+        return Promise.resolve({
+          data: errorData.details.subscription,
+          status: 200,
+          statusText: 'OK',
+          headers: error.response.headers,
+          config: error.config,
+        } as any);
+      }
+
+      // Handle NO_ACTIVE_SUBSCRIPTION - pass through as actionable error
+      if (errorData?.errorCode === 'NO_ACTIVE_SUBSCRIPTION') {
+        // Create an error that the page can detect
+        const noSubError = new Error(`NO_ACTIVE_SUBSCRIPTION: ${errorData?.message || 'No active subscription found'}`);
+        return Promise.reject(noSubError);
+      }
+    }
+
     // If request is not retryable or already retried, reject
     if (!originalRequest || originalRequest._retry) {
       clearTokens();

@@ -1,19 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import type { ReactElement } from 'react';
-import { cn } from '@/lib/utils';
-import { StorageQuota } from './StorageQuota';
-import { Home, Folder, UploadCloud, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import type { ReactElement } from "react";
+import { cn } from "@/lib/utils";
+import { StorageQuota } from "./StorageQuota";
+import { Home, Folder, UploadCloud, LogOut, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/files', label: 'Files', icon: Folder },
-  { href: '/dashboard/folders', label: 'Folders', icon: Folder },
-  { href: '/dashboard/upload', label: 'Upload', icon: UploadCloud },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/dashboard/files", label: "Files", icon: Folder },
+  { href: "/dashboard/folders", label: "Folders", icon: Folder },
+  { href: "/dashboard/upload", label: "Upload", icon: UploadCloud },
+  { href: "/dashboard/subscription", label: "Subscription", icon: CreditCard },
 ];
 
 export function Sidebar(): ReactElement {
@@ -23,7 +24,7 @@ export function Sidebar(): ReactElement {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
@@ -34,18 +35,19 @@ export function Sidebar(): ReactElement {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.href === '/dashboard'
-                ? pathname === '/dashboard'
-                : pathname?.startsWith(item.href);
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname?.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-muted'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-muted"
                   )}
                 >
                   <Icon className="h-4 w-4" aria-hidden />
